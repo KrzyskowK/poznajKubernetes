@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pkdemoapp
+spec:
+  containers:
+    - image: pk.demoapp:0.0.14-alpine-selfcontained
+      name: pkdemoapp
+      resources: 
+        limits:
+          memory: "128Mi"
+          cpu: "500m"
+      ports:
+        - containerPort: 80
