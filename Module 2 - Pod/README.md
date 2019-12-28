@@ -144,7 +144,7 @@ log ostatnich 20 linijek
 ```
 log z ostatnich 10 sekund
 ```
-> kubectl logs <NAME> --since=10
+> kubectl logs <NAME> --since=10s
 ```
 livestream logow
 ```
