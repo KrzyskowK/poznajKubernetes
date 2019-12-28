@@ -65,13 +65,19 @@ kubectl run NAME --image=IMAGE --generator=run-pod/v1  --dry-run -o yaml > pod.y
 - Failed - kiedy jeden z kontenerow zakonczyl sie z niepowodzeniem
 - Unknown - nie można bylo uzyskać stanu PODa
 
-## Pod Status
+## Pod Conditions
 
 - PodScheduled - pod przypisany do nodea
 - Ready - gotowy do przyjecia ruchu
 - Initialized - wszystkie kontenery typu init wystartowaly
 - Unschedulable - nie mozna przypisac z powodu braku zasobow
-- ContainersReady - wszystkie contenery wystartowaly i sa gotowa
+- ContainerReady - wszystkie contenery wystartowaly i sa gotowa
+
+## Container States
+
+- Waiting - kontener czeka na uruchomienie
+- Running - kontener jest uruchomiony
+- Terminated - kontener zakonczył działanie
 
 ## Restart Policy
 
@@ -104,3 +110,77 @@ kubectl get pod <NAME> -o yaml
 
 - postStart (po uruchomieniu kontenera)
 - preStop (przed ubiciem kontenera)
+
+## Resoures: Limits & Requests
+
+- used for balancing and autoscaling
+- requests - how many cpu/ram we need to start container
+- limits - max cpu/ram that we want to allow for container
+
+## Resources Quality of Service
+
+- Guaranteed - zasoby dla `limits` sa dostepne dla wszystkich kontenerow w podzie (`request` nie sa opisane)
+- Burstable - zasoby dla `requests` sa dostepne dla wszystkich kontenerow w podzie (`limits` nie sa opisane)
+- BestEffort - jezeli `limits` i `requests` nie sa ustawione dla wszystkich kontenerow - powinnismy tego unikac
+
+## Pod Insights
+
+```
+> kubectl get pods <NAME>
+> kubectl describe pod <NAME>
+```
+
+log pierwszego kontenera w POD
+```
+> kubectl logs <NAME>
+```
+log wybranego kontenera w POD
+```
+> kubectl logs <NAME> -c <CONTAINER_NAME>
+```
+log ostatnich 20 linijek
+```
+> kubectl logs <NAME> --tail=20 
+```
+log z ostatnich 10 sekund
+```
+> kubectl logs <NAME> --since=10
+```
+livestream logow
+```
+> kubectl logs <NAME> --follow
+```
+log sprzed restartu
+```
+> kubectl logs -p <NAME>
+```
+
+alternatywnie mozemy podczepiac sie pod glowny process pierwszego kontenera
+```
+> kubectl attach <NAME>
+```
+
+dostanie sie na kontener w POD w trybie interactive
+```
+kubectl exec <NAME> -it <COMMAND>
+kubectl exec <NAME> -it /bin/sh
+```
+
+jezeli nasz commad zawiera dodatkowe parametry stosujemy `--`
+```
+kubectl exec <NAME> -- <COMMAD> <PARAMS>
+```
+jeżeli chcemy wybrać kontener
+```
+kubectl exec <NAME> -c <CONTAINER_NAME> -- <COMMAD>
+```
+
+port forward z naszego POD
+```
+kubectl port-forward <NAME> <YOUR_PORT>:<POD_PORT>
+```
+
+dostęp do rest api w API Server
+```
+kubectl proxy
+```

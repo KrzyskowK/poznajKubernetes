@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: multi
+  name: multi
+spec:
+  containers:
+  - image: busybox
+    name: busybox
+    resources: {}
+    command: ['sleep', '3000']
+  - image: poznajkubernetes/helloapp:multi
+    name: helloapp
+    resources: {}
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
