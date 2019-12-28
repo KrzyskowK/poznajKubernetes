@@ -184,3 +184,50 @@ dostęp do rest api w API Server
 ```
 kubectl proxy
 ```
+
+## HealthCheck
+
+- możemy uzyc HTTP lub TCP
+- HTTP powinno zwracać kod z przedziału 200-399 (najlepiej 200)
+
+### HealthCheck - Readiness Probe
+
+- startuje po POST_START hook
+- gdy aplikacja potrzebuje długiego czasu na rozruch
+- dopóki `readiness` nie zwroci OK, nie otrzymamy ruchu po http
+- `readiness` jest sprawdzany przez caly czas
+
+### HealthCheck - Liveness Probe
+
+- startuje po POST_START hook (jezeli StartupProbe nie jest ustawione)
+- sprawdzamy czy aplikacja nadal żyje
+- jezeli odpowiedz jest NOT_OK, container zostanie zrestartowany
+
+### HealthCheck - Startup Probe
+
+- startuje po POST_START hook
+- specjalny wariant liveness, sluzy do skonfiguraowania sprawdzanai liveness przy starcie aplikacji
+
+
+## Reconcilliation Loop
+
+pętla w które kubernetes obserwuje zmiany i wprowadza desired state
+
+https://www.mgasch.com/post/k8sevents/
+
+możemy podejrzec eventy z reconcilliation loop za pomocą
+```
+kubectl get events
+```
+selktywne wyswietlanie eventow
+```
+kubectl get events --field-selector involvedObject.name=<POD_NAME>
+```
+sortowanie eventow
+```
+kubectl get events --sort-by='.metadata.creationTimestamp'
+```
+watch eventow
+```
+kubectl get events -w
+```
