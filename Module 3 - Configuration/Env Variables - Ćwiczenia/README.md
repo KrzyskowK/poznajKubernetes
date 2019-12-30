@@ -4,6 +4,8 @@
 
 ### 1. Wykorzystaj proste zmienne środowiskowe
 
+---
+
 przykładowa definicja POD
 ```
 apiVersion: v1
@@ -30,6 +32,10 @@ status: {}
 
 po wystartowaniu POD możemy zobaczyć że environment variables są widoczne w sekcji `environment`
 ```
+> kubectl apply -f kuard-env.yml
+
+pod/kuard-env created
+
 > kubectl describe pod kuard-env
 
 ...
@@ -54,9 +60,46 @@ Containers:
 możemy też zobaczyć że zostaly poprawnie przekazane do aplikacji wew. kontenera
 ![envrionment variables in kuard app](./kuard-env.png)
 
+### 2. Wykorzystaj w args zmienne środowiskowe
 
+---
 
-### Wykorzystaj w args zmienne środowiskowe
+przykładowa definicja POD
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: kuard-args
+  name: kuard-args
+spec:
+  containers:
+  - image: poznajkubernetes/kuard
+    name: kuard-args
+    resources: {}
+    command: ['echo', 'Sprawdzmy czy $(Variable_1) i $(Variable_2) zostaną przekazane']
+    env:
+      - name: 'Variable_1'
+        value: 'to_jest_pierwsza_zmienna'
+      - name: 'Variable_2'
+        value: '100'
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+```
 
+gry sprawdzimy logi POD po uruchomieniu widzimy że zmienne zostały poprawnie podmienione w argumentach komendy
+```
+> kubectl apply -f kuard-args.yml
 
-### Skorzystaj z możliwości przekazania informacji o pod poprzez zmienne środowiskowe
+pod/kuard-args created
+
+> kubectl logs kuard-args
+
+Sprawdzmy czy to_jest_pierwsza_zmienna i 100 zostaną przekazane
+```
+
+### 3. Skorzystaj z możliwości przekazania informacji o pod poprzez zmienne środowiskowe
+
+---

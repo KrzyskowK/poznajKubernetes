@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: kuard-args
+  name: kuard-args
+spec:
+  containers:
+  - image: poznajkubernetes/kuard
+    name: kuard-args
+    resources: {}
+    command: ['echo', 'Sprawdzmy czy $(Variable_1) i $(Variable_2) zostaną przekazane']
+    env:
+      - name: 'Variable_1'
+        value: 'to_jest_pierwsza_zmienna'
+      - name: 'Variable_2'
+        value: '100'
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
