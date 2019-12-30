@@ -47,7 +47,8 @@ kubectl apply -f configmap.yaml
 - `envFrom` w konfiguracji kontenera pozwala wciągnąć wszystkie zmienne z podanej `configMapRef`
 ```
 envFrom:
-    - configMapRef:          name: <MAP_NAME>
+    - configMapRef:          
+        name: <MAP_NAME>
         optional: false
 ```
 - `configMapKeyRef` poznawala wciągnąć pojedynczy klucz

@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pkad
+  name: pkad
+spec:
+  containers:
+  - image: poznajkubernetes/pkad
+    name: pkad
+    resources: {}
+    env:
+      - name: 'file20'
+        valueFrom:
+          configMapKeyRef:
+            key: 20KB.txt
+            name: cw3
+      - name: 'file50'
+        valueFrom:
+          configMapKeyRef:
+            key: 50KB.txt
+            name: cw3
+    envFrom:
+      - configMapRef:
+          name: cw3
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}

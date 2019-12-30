@@ -1,0 +1,9 @@
+{
+    "json1": "aaa",
+    "json2": 2,
+    "json3": [1,2,3],
+    "json4": {
+        "json5": "xxx",
+        "json6": ["a","b","c"]
+    }
+}
