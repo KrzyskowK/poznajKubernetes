@@ -339,3 +339,78 @@ file50=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 
 ## Co ma pierwszeństwo: zmienna środowiskowa zdefiniowana w ConfiMap czy w Pod?
 
+Zmienna środowiskowa zdefiniowana w `env` w `POD` zawsze nadpisze zmienną dostarczoną z `ConfigMap` przez `envFrom`
+
+przykładowy `pkad-env-vs-envFrom.yaml` pokazujący co się stanie:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pkad
+  name: pkad
+spec:
+  containers:
+  - image: poznajkubernetes/pkad
+    name: pkad
+    resources: {}
+    envFrom:
+      - configMapRef:
+          name: cw1
+    env:
+      - name: x
+        value: 'from_pod_env'
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+```
+
+## Czy kolejność definiowania ma znaczenie (np.: env przed envFrom)?
+
+tylko dla kolejności wpisania zmiennych do zmiennych środowiskowych (można posłużyc się `pkad-env-vs-envFrom.yaml` aby to sprawdzić)
+
+## Jak się ma kolejność do dwóch różnych ConfigMap?
+
+Jeżeli dwie konfigmapy stosują te same nazwy zmiennych to w environment variablach wartość zmiennej zostanie nadpisana przez ostatnią configMape. Przykłąd poniżej:
+
+```
+> kubectl create cm cw-a1 --from-literal=x=a1
+configmap/cw-a1 created
+
+> kubectl create cm cw-a2 --from-literal=x=a2
+configmap/cw-a2 created
+```
+`pkad-cw-a1-and-cw-a2.yaml`:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pkad
+  name: pkad
+spec:
+  containers:
+  - image: poznajkubernetes/pkad
+    name: pkad
+    resources: {}
+    envFrom:
+      - configMapRef:
+          name: cw-a1
+      - configMapRef:
+          name: cw-a2
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+```
+```
+> kubectl apply -f pkad-cw-a1-and-cw-a2.yaml 
+pod/pkad created
+
+> kubectl exec pkad -- printenv  
+PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+HOSTNAME=pkad
+x=a2
+...
+```
