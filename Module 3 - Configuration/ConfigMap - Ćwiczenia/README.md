@@ -414,3 +414,179 @@ HOSTNAME=pkad
 x=a2
 ...
 ```
+
+---
+---
+
+## Wolumeny
+
+### 1. Wykorzystując drugą ConfigMapę stwórz Pod i wczytaj wszystkie pliki do katalogu wybranego przez siebie katalogu
+
+`pkad-cw2-volume.yaml`:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pkad
+  name: pkad
+spec:
+  volumes:
+    - name: cw2volume
+      configMap:
+        name: cw2
+  containers:
+  - image: poznajkubernetes/pkad
+    name: pkad
+    resources: {}
+    volumeMounts:
+      - name: cw2volume
+        mountPath: /etc/config        
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+```
+
+```
+> kubectl apply -f pkad-cw2-volume.yaml
+> kubectl exec pkad -- ls /etc/config
+config1.json
+config2
+x
+
+> kubectl exec pkad -- cat /etc/config/config1.json
+{
+    "json1": "aaa",
+    "json2": 2,
+    "json3": [1,2,3],
+    "json4": {
+        "json5": "xxx",
+        "json6": ["a","b","c"]
+    }
+}
+```
+
+### 2. Wczytaj do wolumenu tylko i wyłącznie pliki powyżej 30KB z trzeciej ConfigMapy
+
+`pkad-cw3-30KB-volume.yaml`:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pkad
+  name: pkad
+spec:
+  volumes:
+    - name: cw3volume
+      configMap:
+        name: cw3
+        items:
+          - key: 30KB.txt
+            path: 30KB.txt
+  containers:
+  - image: poznajkubernetes/pkad
+    name: pkad
+    resources: {}
+    volumeMounts:
+      - name: cw3volume
+        mountPath: /etc/config        
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+```
+
+```
+> kubectl apply -f pkad-cw3-30KB-volume.yaml
+pod/pkad created
+
+> kubectl exec pkad -- ls /etc/config
+30KB.txt
+```
+
+### Co się stanie jak z mountPath ustawisz na katalog Twojej aplikacji?
+
+w ten sposób nadpiszemy nasz katalog, kontener nie wstanie bo nie będzie miał czego uruchomić
+
+`pkad-wrong-mountpath.yaml`:
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pkad
+  name: pkad
+spec:
+  volumes:
+    - name: cw2volume
+      configMap:
+        name: cw2
+  containers:
+  - image: poznajkubernetes/pkad
+    name: pkad
+    resources: {}
+    volumeMounts:
+      - name: cw2volume
+        mountPath: /pkad/
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
+```
+
+```
+> kubectl apply -f pkad-wrong-mountpath.yaml
+> kubectl get pod pkad           
+NAME   READY   STATUS               RESTARTS   AGE
+pkad   0/1     ContainerCannotRun   0          2m7s
+
+> kubectl get pod pkad -o yaml
+
+...
+state:
+      terminated:
+        containerID: docker://c0a8429b9ed34f70d586dc5bf8b0eed69517d397a06243d8935c8af40a6f8788
+        finishedAt: "2019-12-30T13:15:22Z"
+        message: 'OCI runtime create failed: container_linux.go:346: starting container
+          process caused "process_linux.go:449: container init caused \"rootfs_linux.go:58:
+          mounting \\\"/var/lib/kubelet/pods/6d9abd51-2b06-11ea-aea1-00155d006a01/volumes/kubernetes.io~configmap/cw2volume\\\"
+          to rootfs \\\"/var/lib/docker/overlay2/71d7e584bc4b194f2f1d205e3fc7d12fcfffc64e58642f3532c8f8900a8d1382/merged\\\"
+          at \\\"/var/lib/docker/overlay2/71d7e584bc4b194f2f1d205e3fc7d12fcfffc64e58642f3532c8f8900a8d1382/merged/pkad\\\"
+          caused \\\"not a directory\\\"\"": unknown: Are you trying to mount a directory
+          onto a file (or vice-versa)? Check if the specified host path exists and
+          is the expected type'
+        reason: ContainerCannotRun
+        startedAt: "2019-12-30T13:15:22Z"
+...
+```
+
+
+### Co się stanie jak plik stworzony przez ConfigMap zostanie usunięty? Czy taki plik zostanie usunięty?
+
+configMap jest montowane na volume jako readonly i nie może zostać usunięty
+
+```
+> kubectl exec pkad -- rm /etc/config/30KB.txt
+rm: can't remove '/etc/config/30KB.txt': Read-only file system
+command terminated with exit code 1
+```
+
+### co spowoduje aktualizacja ConfigMapy?
+
+Spowoduję automatyczny update konfiguracji zapisanej na volume
+
+```
+> kubectl exec pkad -- cat /etc/config/30KB.txt
+
+xxx
+
+# we update 30KB.txt to bbb
+> kubectl edit cm cw3 
+
+# now we should wait couple seconds for config refresh on volume
+> kubectl exec pkad -- cat /etc/config/30KB.txt
+
+bbb
+```

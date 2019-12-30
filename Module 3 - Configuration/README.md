@@ -75,10 +75,10 @@ spec:
     volumes:
     - name: <VOL_NAME>
       configMap:
-      name: <MAP_NAME>
-      items:
-        - key: <FILE_KEY>
-          path: config.json
+        name: <MAP_NAME>
+        items:
+          - key: <FILE_KEY>
+            path: config.json
     containers:
       - name: <CONTAINER_NAME>
         volumeMounts:
@@ -93,7 +93,7 @@ spec:
     volumes:
     - name: <VOL_NAME>
       configMap:
-      name: <MAP_NAME>
+        name: <MAP_NAME>
     containers:
       - name: <CONTAINER_NAME>
         volumeMounts:

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: null
+  labels:
+    run: pkad
+  name: pkad
+spec:
+  volumes:
+    - name: cw2volume
+      configMap:
+        name: cw2
+  containers:
+  - image: poznajkubernetes/pkad
+    name: pkad
+    resources: {}
+    volumeMounts:
+      - name: cw2volume
+        mountPath: /etc/config        
+  dnsPolicy: ClusterFirst
+  restartPolicy: Never
+status: {}
