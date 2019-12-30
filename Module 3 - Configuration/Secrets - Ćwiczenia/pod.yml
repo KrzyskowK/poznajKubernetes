@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pkdemoapp
+spec:
+  containers:
+  - image: krzyskowk/pk.demoapp:1.0.0
+    name: pkdemoapp
+  imagePullSecrets:
+    - name: regcred
+status: {}
