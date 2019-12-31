@@ -40,7 +40,6 @@ spec:
 - service typu `NodePort` (patrz niżej)
 - service dostaje zewnętrzne IP
 - `kubeproxy` ustawia w `IP tables` dla każdego `node` regułę która przekierowuje na service
-
 ```
 kind: Service
 apiVersion: v1
