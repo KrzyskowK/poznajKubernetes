@@ -191,6 +191,180 @@ sprawdzamy również czy możemy dostać się do nginx przez nazwę naszego serw
 
 ### Wykorzystaj nginx i wystaw go na świat za pomocą serwisu NodePort w dwóch opcjach: bez wskazywania portu dla NodePort i ze wskazaniem.
 
+`nodePort-service.yaml:`
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeport-service
+spec:
+  type: NodePort
+  selector:
+    app: nginx
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx1
+  labels:
+    app: nginx
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    ports:
+      - containerPort: 80
+        name: http
+        protocol: TCP
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx2
+  labels:
+    app: nginx
+spec:
+  containers:
+  - image: nginx
+    name: nginx
+    ports:
+      - containerPort: 80
+        name: http
+        protocol: TCP
+```
 
+```
+> kubectl apply -f .\nodePort-service.yaml
+service/nodeport-service created
+pod/nginx1 unchanged
+pod/nginx2 unchanged
+```
+
+sprawdzamy port przydzielony dla naszego serwisu
+```
+> kubectl get service 
+NAME                TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)          AGE
+clusterip-service   ClusterIP   10.101.162.234   <none>        8080/TCP         22m
+kubernetes          ClusterIP   10.96.0.1        <none>        443/TCP          23d
+nodeport-service    NodePort    10.103.140.66    <none>        8080:31076/TCP   25s
+```
+
+sprawdzamy czy jesteśmy w stanie dostać się do nginx spoza klastra
+```
+> curl http://localhost:31076
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+...
+```
+
+następnie wystawiamy wersję `nodePort` z przypisanym portem `31666`
+`nodePort-service-port:`
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nodeport-service-port
+spec:
+  type: NodePort
+  selector:
+    app: nginx
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+    nodePort: 31666
+...
+```
+
+```
+> kubectl apply -f .\nodePort-service-port.yaml
+service/nodeport-service-port created
+pod/nginx1 unchanged
+pod/nginx2 unchanged
+```
+
+Widzimy że port został poprawnie podpięty
+```
+> kubectl get service nodeport-service-port
+NAME                    TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+nodeport-service-port   NodePort   10.106.184.29   <none>        8080:31666/TCP   30s
+```
+a nginx jest teraz również dostępny z zewnątrz pod adresem http://localhost:31666
+```
+> curl http://localhost:31666
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+...
+```
 
 ### Wykorzystaj nginx i wystaw go na świat za pomocą serwisu typu LoadBalancer,
+
+`loadBalancer-service.yaml:`
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+...
+```
+
+```
+> kubectl apply -f .\loadBalancer-service.yaml
+service/loadbalancer-service created
+pod/nginx1 unchanged
+pod/nginx2 unchanged
+```
+
+widzimy że `loadbalancer-service` został udostępniony pod zewnetrzym IP
+```
+> kubectl get service
+NAME                   TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
+kubernetes             ClusterIP      10.96.0.1       <none>        443/TCP          23d
+loadbalancer-service   LoadBalancer   10.111.82.111   localhost     8080:30224/TCP   3m17s
+```
+
+nasz nginx jest teraz dostępny pod adresem http://localhost:8080
+```
+> curl http://localhost:8080
+<!DOCTYPE html>
+<html>
+<head>
+<title>Welcome to nginx!</title>
+```
+
+
+## Ćwiczenie 2
+
+### Utwórz dwa Pody z aplikacją helloapp, które mają po jednym wspólnym Label, oraz posiadają oprócz tego inne Label (poniżej przykład).
+```
+# Pod 1
+labels:
+  app: helloapp
+  ver: v1
+
+# Pod 2
+labels:
+  app: helloapp
+  ver: v1
+```
+### Do tak utworzonych Podów podepnij serwis i sprawdź jak się zachowuje.
+
