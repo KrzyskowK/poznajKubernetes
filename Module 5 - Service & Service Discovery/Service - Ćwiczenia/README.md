@@ -368,3 +368,138 @@ labels:
 ```
 ### Do tak utworzonych Podów podepnij serwis i sprawdź jak się zachowuje.
 
+`helloapps.yaml:`
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: helloapp1
+  labels:
+    app: helloapp
+    instance: no1
+spec:
+  containers:
+  - image: poznajkubernetes/helloapp:svc
+    name: helloapp
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: helloapp2
+  labels:
+    app: helloapp
+    instance: no2
+spec:
+  containers:
+  - image: poznajkubernetes/helloapp:svc
+    name: helloapp
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: helloapp
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
+```
+
+```
+> kubectl apply -f helloapps.yaml
+pod/helloapp1 created
+pod/helloapp2 created
+service/loadbalancer created
+```
+
+gdy odbytamy nasz klaster na localhost:8080 kilkukrotnie dostajemy odpowiedzi z różnych podów
+```
+curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp2
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp2
+```
+
+za pomoca `endpoints` widzimy ze loadbalancer wskazuje na oba pody
+
+```
+> kubectl get pod -o wide
+NAME        READY   STATUS    RESTARTS   AGE   IP           NODE             NOMINATED NODE   READINESS GATES
+helloapp1   1/1     Running   0          28s   10.1.0.140   docker-desktop   <none>           <none>
+helloapp2   1/1     Running   0          28s   10.1.0.141   docker-desktop   <none>           <none>
+
+> kubectl get endpoints
+NAME           ENDPOINTS                         AGE
+kubernetes     192.168.65.3:6443                 5m30s
+loadbalancer   10.1.0.140:8080,10.1.0.141:8080   4m15s
+```
+
+jeżeli zmienimy `selector` w naszym serwisie na `instance: no2`
+```
+> kubectl edit service loadbalancer   
+> kubectl get service loadbalancer -o yaml
+...
+ selector:
+    instance: no2
+...
+```
+
+to widzimy że serwis zacznie wskazywać jedynie na `helloapp2`
+```
+> kubectl get endpoints
+NAME           ENDPOINTS           AGE
+kubernetes     192.168.65.3:6443   11m
+loadbalancer   10.1.0.141:8080     10m
+
+> kubectl get pod -o wide --show-labels   
+NAME        READY   STATUS    RESTARTS   AGE   IP           NODE             NOMINATED NODE   READINESS GATES   LABELS
+helloapp1   1/1     Running   0          10m   10.1.0.140   docker-desktop   <none>           <none>            app=helloapp,instance=no1
+helloapp2   1/1     Running   0          10m   10.1.0.141   docker-desktop   <none>           <none>            app=helloapp,instance=no2
+```
+w odpowiedzial loadbalancera widzimy że odpowiada nam juz tylko jeden serwis
+```
+curl localhost:8080
+Cześć, 🚢 =>  helloapp2
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp2
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp2
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp2
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp2
+```
+
+jeżeli natomiast wrócimy do poprzedniego selectora `app: helloapp` i usuniemy pod `helloapp2`, loadbalancer automatycznie przekieruje cały ruch na `helloapp1`
+```
+curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+> curl localhost:8080
+Cześć, 🚢 =>  helloapp1
+```

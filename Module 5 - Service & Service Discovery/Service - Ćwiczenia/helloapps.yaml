@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: helloapp1
+  labels:
+    app: helloapp
+    instance: no1
+spec:
+  containers:
+  - image: poznajkubernetes/helloapp:svc
+    name: helloapp
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: helloapp2
+  labels:
+    app: helloapp
+    instance: no2
+spec:
+  containers:
+  - image: poznajkubernetes/helloapp:svc
+    name: helloapp
+    ports:
+      - containerPort: 8080
+        name: http
+        protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loadbalancer
+spec:
+  type: LoadBalancer
+  selector:
+    app: helloapp
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: http
