@@ -134,3 +134,16 @@ Pod do sprawdzania nslookup
 ```
 kubectl run -it --rm tools --generator=run-pod/v1 --image=giantswarm/tiny-tools
 ```
+
+## DNS w Kubernetes
+
+- serwis discovery działa w oparciu o DNS
+- obecnie używana jest implementacja core.DNS
+- każdy serwis jest automatycznie mapowany w DNS (A record)
+
+- do serwisu możemy odwołac sie za pomoca <SERVICE_NAME> lub <SERVICE_NAME>.<NAMESPACE> lub za pomoca pełnego adresu <SERVICE_NAME>.<NAMESPACE>.svc.cluster.local 
+
+## namespace
+
+- wirtualny klaster
+- zasób może być przypisany tylko do jendego namespace
