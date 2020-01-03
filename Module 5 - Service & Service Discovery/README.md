@@ -135,6 +135,11 @@ Pod do sprawdzania nslookup
 kubectl run -it --rm tools --generator=run-pod/v1 --image=giantswarm/tiny-tools
 ```
 
+## Service Discovery w Kubernetess
+
+- service discovery jest realizowany an dwa sposoby
+- 1. Przez zmienne środowiskowe - serwis wstrzykuje do pod adresy 
+
 ## DNS w Kubernetes
 
 - serwis discovery działa w oparciu o DNS
