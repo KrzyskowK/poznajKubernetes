@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: recreate
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: helloapp
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: helloapp
+    spec:
+      containers:
+      - image: poznajkubernetes/helloapp:svc
+        name: helloapp
+        env:
+         - name: version
+           value: v2.0.0
