@@ -46,10 +46,30 @@ kubectl get replicaset
 - deployment wykonuje skalowanie (in) na startej replicaSet-v1 i (out) na nowej replicaSet-v2
 - (mechanizm może się różnić w zależności od strategii updatu)
 
-### typy strategii
+### typy deployment strategy: recreate
 
-- `recreate` - usuwa instancje i tworzy nowe
-- `rollingupdate` - `maxSurge` - ile podow dodajemy i `maxUnavailable` - ile podow moze byc niedostepnych
+- usuwa instancje poprzedniej wersji (skalujac instance do zera) i tworzy nowe replica set
+- dobre dla aplikacji które nie mogą działać współbierznie w nowej i starej wersji
+
+```
+spec:
+  strategy
+    type: Recreate
+```
+
+### typy deployment strategy: rollingupdate
+
+- deployment w stylu zero downtime
+- `maxSurge` - ile pod (nowych) maksymalnie może być dodawanych na raz
+- `maxUnavailable` - ile pod (starych) może być niedostępnych przy wdrozeniu na raz
+```
+spec:
+  strategy
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1 albo ilość %
+      maxUnavailable: 1 albo ilość %
+```
 
 ### zarządzanie deploymentem
 
@@ -98,15 +118,26 @@ spec:
 
 ### rollout
 
+- `kubectl rollout status` - do sprawdzenia statusu wdrożenia
 - rollout zawsze przypisuje nowy numer revision do wydawanego deploymentu
 - mozemy dodac do adnotacji `kubernetes.io/change-cause: <text>` dzieki czemu zostanie to dodane do rollout history jako `change-cause`
 
-historia rolloutów
+status
+```
+kubectl rollout status deployment <NAME>
+```
+zatrzymanie/wznowienie
+```
+kubectl rollout pause deployment <NAME>
+kubectl rollout resume deployment <NAME>
+```
+historia wdrożenia
 ```
 kubectle rollout history deploy <deploymentName>
 ```
-wycofanie rolloutu
+wycofanie wdrożenia
 ```
-kubectl rollout undo deploy <deploymentName>
+kubectl rollout undo deploy <deploymentName> 
+kubectl rollout undo deploy <deploymentName> --to-revision=<id z historii>
 ```
 

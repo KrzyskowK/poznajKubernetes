@@ -24,7 +24,7 @@ spec:
         name: helloapp
 ```
 
-T
+Dodajemy deployment do konfiguracji klastra
 ```
 > kubectl apply -f basic-deployment.yaml
 
