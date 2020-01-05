@@ -141,3 +141,62 @@ kubectl rollout undo deploy <deploymentName>
 kubectl rollout undo deploy <deploymentName> --to-revision=<id z historii>
 ```
 
+## Skalownanie
+
+## Skalowanie - imperatywne
+
+- imperatywna zmiana nie zmienia numeru rewizji (mutujemy nasz replicaset)
+```
+kubectl scale deploy <NAME> --replicas=3
+kubectl scale deploy <NAME> --current-replicas=2 --replicas=3
+```
+
+## Skalowanie - Horizontal Pod Autoscaler
+
+tworzenie HPA
+
+Przykładowe skalowanie aplikacji od 1 do 10 instancji w momencie gry CPU jest przekroczone o 50%
+```
+kubectl autoscale deployment <NAME> --cpu-percent=50 --min=1 --max=10
+```
+
+deklaratywna definicja
+```
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata
+  name: autoscaler
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: rollingupdate
+  minReplicas: 1
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 50
+```
+
+### setting up HPA (przykład)
+
+1. instalujemy `Metrics Server` https://github.com/kubernetes-sigs/metrics-server
+2. wgrywamy example ktory zuzywa procka 
+```
+kubectl run ll --image=k8s.gcr.io/hpa-example --requests=cpu=200m --expose --port=80
+```
+3. ustawiamy nasz autoscale 
+```
+kubectl autoscale deployment ll --cpu-percent=50 --min=1 --max=10`
+```
+4. teraz wgrywamy pod ktory będzie generował obciązenie 
+```
+kubectl run --rm -it lg --image=busybox /bin/sh
+> while true; do wget -q -O- http://SVC_NAME.default.svc.cluster.local; done
+```
+
+### obserwowanie zasobów
+
+zwrócenie podów które zuzywaja najwiekszą ilość cpu
+```
+kubectl top pods
+```
