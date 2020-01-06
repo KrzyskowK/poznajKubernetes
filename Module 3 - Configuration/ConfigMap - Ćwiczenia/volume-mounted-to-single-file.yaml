@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: appsettings
+data:
+  wget: jakies dane
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pkad-x
+  labels:
+    name: pkad-x
+spec:
+  containers:
+  - name: pkad-x
+    volumeMounts:
+    - name: config-volume
+      mountPath: /udhcpd.conf
+      subPath: udhcpd.conf
+    image: poznajkubernetes/pkad
+    env:
+    - name: TEST
+      value: Poznaj Kubernetes
+    resources:
+      limits:
+        memory: "128Mi"
+        cpu: "500m"
+    ports:
+      - containerPort: 8080
+  volumes:
+    - name: config-volume
+      configMap:
+        name: appsettings
+        items:
+          - key: wget
+            path: udhcpd.conf
+  restartPolicy: Never
