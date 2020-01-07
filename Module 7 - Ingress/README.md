@@ -77,10 +77,10 @@ spec:
     - path: /t
       backend: 
         serviceName: test
-        servicerPort: 80
+        servicePort: 80
     - backend: 
       serviceName: test
-      servicerPort: 80
+      servicePort: 80
 ```
 
 
@@ -100,7 +100,7 @@ metadata:
 spec:
   backend: 
     serviceName: test
-    servicerPort: 80
+    servicePort: 80
 ```
 
 ⚠️ __w wersji NGINX nie działa nazwanie portu :(__
@@ -123,11 +123,11 @@ spec:
     - path: /v1
       backend: 
         serviceName: test-v1
-        servicerPort: 80
+        servicePort: 80
     - path: /v2
       backend: 
         serviceName: test-v2
-        servicerPort: 80
+        servicePort: 80
 ```
 
 ⚠️ __od wersji `0.22.2` NGINX Ingress Controller w path uzywamy regex__
@@ -146,11 +146,11 @@ spec:
     - path: /v1/?(.*)
       backend: 
         serviceName: test-v1
-        servicerPort: 80
+        servicePort: 80
     - path: /v2/?(.*)
       backend: 
         serviceName: test-v2
-        servicerPort: 80
+        servicePort: 80
 ```
 
 3. __name based virtual hosting__ - routinh na bazie host header (mozemy użyc np. subdomain)
