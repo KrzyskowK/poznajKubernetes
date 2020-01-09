@@ -177,3 +177,89 @@ spec:
         serviceName: test-v2
         servicePort: 80
 ```
+
+## Certyfikaty
+
+- dostarczamy za pomocą obiektu `Secret` (`kubernetes.io/tls`)
+- sekret musi się znajdywać w tym samym namespace co ingress
+- możemy używać certyfikatów typu wildcard
+- jeśli certyfikat jest ustawiony w ingress NGINX Ingress Controller domyślnie będzie przekierowywal na HTTPS (308 Permanent Redirect)
+
+
+## Certyfikaty - użycie w Ingress
+
+```
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: tls-ingress
+spec:
+  tls:
+  - hosts:
+    - demo.pk8s.pl
+    secretName: cert-demo-pk8s-pl
+  rules:
+    - host: demo.pk8s.pl
+    ...
+```
+
+wygenerowanie i wgranie certyfikatu:
+```
+# wygenerowanie certyfikatu
+openssl req -newkey rsa:2048 -nodes -keyout key.pem -x509 -days 365 -out certificate.pem
+
+# utworzenie secretu z certyfikatem
+kubectl create secret tls tls-localhost --key key.pem --cert certificate.pem
+```
+
+## Cert-Manager
+
+- komponent to zarządzania certyfikatami w k8s
+- używamy obieku `Issuer`
+- instalacja: https://cert-manager.io/docs/installation/kubernetes/
+
+
+definicja issuera:
+```
+apiVersion: cert-manager.io/v1alpha2
+kind: Issuer
+metadate:
+  name: letsencrypt-prod
+spec:
+  acme:
+    # acme URL
+    server: https://acme-v02.api.letsencrypt.org/directory
+    # enam address used for ACME validation/registration
+    email: user@example.com
+    # name of secret uset to store ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-pod
+    # an empty 'selector' means that this solver matches all domains
+    solvers:
+    - selector: {}
+      http01:
+        ingress:
+          class: nginx
+
+```
+użycie w ingress:
+```
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: tls-ingress
+  annotations:
+    cert-manager.io/issuer: "letsencrypt-prod"
+spec:
+  tls:
+  - hosts:
+    - demo.pk8s.pl
+    secretName: cert-demo-pk8s-pl
+  rules:
+    - host: demo.pk8s.pl
+    ...
+```
+
+## Certyfikaty - Let's en Encrypt
+
+-
