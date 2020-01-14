@@ -1,0 +1,24 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: cronjob-demo
+spec:
+  schedule: '*/2 * * * *'
+  concurrencyPolicy: Replace
+  jobTemplate:
+    metadata:
+      name: cronjob-demo
+    spec:
+      completions: 2
+      parallelism: 2
+      template:
+        metadata:
+          name: busybox
+        spec:
+          containers:
+          - image: busybox
+            name: cronjob-demo
+            args: 
+            - "sleep"
+            - "3000"
+          restartPolicy: OnFailure
