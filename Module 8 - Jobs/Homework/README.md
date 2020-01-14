@@ -4,8 +4,11 @@
 
 ### Do czego przydałby się CrobJob?
 
-- np cykliczne czyszczenia "przeterminowanych danych"
+- cykliczne czyszczenia "przeterminowanych danych"
+- cykliczny update statycznych danych
+- wszelkie inne zadania polegające na batchowym przetwarzaniu danych
 
 ### Czy widzisz bezpośrednie (bez CronJob) użycie Job?
 
-- np do generowania raportów "on demand"
+- do generowania raportów "on demand"
+- do jednorazowych zadań związanych z deploymentem
