@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: ds-on-delete
+spec:
+  updateStrategy:
+    type: OnDelete
+  selector:
+    matchLabels:
+      name: pkad
+  template:
+    metadata:
+      labels: 
+        name: pkad
+    spec:
+      containers:
+      - name: pkad
+        image: poznajkubernetes/pkad:blue
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
