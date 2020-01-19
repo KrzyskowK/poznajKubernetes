@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pkad-config
+data:
+  udhcpd.conf: "hello from configmap :wave:"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pkad
+  labels:
+    name: pkad
+spec:
+  containers:
+  - name: pkad
+    volumeMounts:
+    - name: config-volume
+      mountPath: /etc/udhcpd.conf
+      subPath: udhcpd.conf
+    image: poznajkubernetes/pkad
+  volumes:
+    - name: config-volume
+      configMap:
+        name: pkad-config
+  restartPolicy: Never
