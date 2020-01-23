@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pkdemoapp-config
+data:
+  appsettings.json: "{}"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pkdemoapp
+spec:
+  containers:
+  - image: krzyskowk/pk.demoapp:1.0.0
+    name: pkdemoapp
+    volumeMounts:
+    - name: config-volume
+      mountPath: /app/appsettings.json
+      subPath: appsettings.json
+  imagePullSecrets:
+    - name: regcred
+  volumes:
+    - name: config-volume
+      configMap:
+        name: pkdemoapp-config
+status: {}

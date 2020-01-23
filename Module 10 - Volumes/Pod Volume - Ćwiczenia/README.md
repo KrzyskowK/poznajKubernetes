@@ -180,6 +180,22 @@ widzimy również, że wartość klucza z configmap `pkad-config` została popra
 hello from configmap :wave:
 ```
 
+⚠️ Uwaga jeżeli używamy subpath, zmiany wprowadzone w `pkad-config` nie zostaną odzwierciedlone w pod automatycznie. wymagany będzie restart
+
+modyfikujemy naszą konfigurację:
+```
+udhcpd.conf: "hello from configmap :wave: 3"
+```
+następnie wgrywamy nową wersję na klaster, i potwierdzamy że nic się nie zmieniło
+```
+> kubectl apply -f .\subpath-volume.yaml
+configmap/pkad-config configured
+pod/pkad configured
+
+> kubectl exec pkad -- cat /etc/udhcpd.conf
+hello from configmap :wave:
+```
+
 ### Zrób to samo dla pliku /usr/bin/wget
 
 zmieniamy poprzedni template tak żeby mountpath wskazywał teraz na `/usr/bin/wget`
@@ -225,8 +241,9 @@ command terminated with exit code 126
 ```
 
 ⚠️⚠️⚠️
+
 Niestety nie mam pojęcia jak poprawnie zdjagnozować ten przypadek.
-Nie widzę nic ciekawego w diagnostyce POD
+Nie widzę nic ciekawego w diagnostyce POD ani w logach
 
 ```
 > kubectl describe pod pkad-wget
@@ -381,4 +398,39 @@ status:
   podIP: 10.1.1.203
   qosClass: BestEffort
   startTime: "2020-01-19T22:00:16Z"
-  ```
+```
+
+```
+> kubectl log pkad-wget
+log is DEPRECATED and will be removed in a future version. Use logs instead.
+2020/01/19 22:00:19 Starting pkad version: blue
+2020/01/19 22:00:19 **********************************************************************
+2020/01/19 22:00:19 * WARNING: This server may expose sensitive
+2020/01/19 22:00:19 * and secret information. Be careful.
+2020/01/19 22:00:19 **********************************************************************
+2020/01/19 22:00:19 Config:
+{
+  "address": ":8080",
+  "debug": false,
+  "debug-sitedata-dir": "./sitedata",
+  "keygen": {
+    "enable": false,
+    "exit-code": 0,
+    "exit-on-complete": false,
+    "memq-queue": "",
+    "memq-server": "",
+    "num-to-gen": 0,
+    "time-to-run": 0
+  },
+  "liveness": {
+    "fail-next": 0
+  },
+  "readiness": {
+    "fail-next": 0
+  },
+  "tls-address": ":8443",
+  "tls-dir": "/tls"
+}
+2020/01/19 22:00:19 Could not find certificates to serve TLS
+2020/01/19 22:00:19 Serving on HTTP on :8080
+```
