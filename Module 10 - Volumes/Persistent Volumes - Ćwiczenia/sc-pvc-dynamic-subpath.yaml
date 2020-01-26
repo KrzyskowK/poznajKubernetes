@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-pvc-sc-subpath
+spec:
+  storageClassName: "demo-sc"
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 0.5Mi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pv-dynamic-subpath
+spec:
+  initContainers:
+    - image: ubuntu:latest
+      name: setup
+      volumeMounts:
+        - name: workdir
+          mountPath: /tempdir
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "hello from subpath!!!" > /tempdir/index.html;
+  containers:
+    - image: nginx:1.17.6
+      name: web
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: workdir
+          mountPath: /usr/share/nginx/html/index.html
+          subPath: index.html
+  volumes:
+    - name: workdir
+      persistentVolumeClaim:
+        claimName: demo-pvc-sc-subpath

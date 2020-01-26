@@ -267,9 +267,100 @@ hello from subpath!!!
 
 ### PersistenVolumeProvisioner aby zcacheować repozytorium git za pomocą InitContainer
 
+Zaczynamy od stworzenia `storageClass` która zapewni nam dostęp do defaultowego provisionera dostępnego w k8s docker for windows
+```
+> kubectl get sc 
+NAME                 PROVISIONER          AGE
+hostpath (default)   docker.io/hostpath   6d17h
+```
+Template naszego storage class:
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: demo-sc
+provisioner: docker.io/hostpath
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+```
+następnie tworzymy nowy PVC który będzie z niej korzystał
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-pvc-sc
+spec:
+  storageClassName: "demo-sc"
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 0.5Mi
+```
+Na koniec modyfikujemy definicje naszego pod z pierwszego zadania, tak aby korzystał z volume `demo-pvc-sc`.
+Następnie Dodajemy konfigurację do klastra
+```
+> kubectl apply -f .\sc-pvc-dynamic.yaml
+storageclass.storage.k8s.io/demo-sc created
+persistentvolumeclaim/demo-pvc-sc created
+pod/web-pv-dynamic created
+```
+Widzimy, że nasz PVC został z-boundowany do PV, w odróznieniu od statycznych PVC widzimy że przypisane mu został jedynie zarequestowane 0.5Mi
+```
+> kubectl get pvc
+NAME               STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+demo-pvc           Bound    demo-pv                                    10Mi       RWO                           165m
+demo-pvc-sc        Bound    pvc-050e4fb5-4043-11ea-b471-00155d006a01   512Ki      RWO            demo-sc        20s
+demo-pvc-subpath   Bound    demo-pv-subpath                            10Mi       RWO                           62m
+```
+Potwierdzamy, że POD zadziałał zgodnie z oczekiwaniami
+```
+> kubectl port-forward web-pv-dynamic 8080:80
+
+> curl localhost:8080
+<h1>Ahoj! 🚢📦🏴‍☠️</h1
+```
 ---
 
 ### PersistenVolumeProvisioner aby dostarczyć plik konfiguracyjny za pomocą subpath
+
+Tworzymy PVC który użyje ponownie storageClass `demo-sc` stworzonej w poprzednim zadaniu
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-pvc-sc-subpath
+spec:
+  storageClassName: "demo-sc"
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 0.5Mi
+```
+delikatnie modyfikujemy POD użyty powyżej dla przykładu ze statycznym PV-PVC żeby korzystał z volume `demo-pvc-sc-subpath`
+i wgrywamy konfiguracją na klaster
+```
+> kubectl apply -f .\sc-pvc-dynamic-subpath.yaml
+persistentvolumeclaim/demo-pvc-sc-subpath created
+pod/web-pv-dynamic-subpath created
+```
+widzimy, że nasz PVC został bez problemu przypięty do już wykorzystywanego storageClass
+```
+> kubectl get pvc
+NAME                  STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+demo-pvc              Bound    demo-pv                                    10Mi       RWO                           3h14m
+demo-pvc-sc           Bound    pvc-050e4fb5-4043-11ea-b471-00155d006a01   512Ki      RWO            demo-sc        29m
+demo-pvc-sc-subpath   Bound    pvc-1544348f-4047-11ea-b471-00155d006a01   512Ki      RWO            demo-sc        19s
+demo-pvc-subpath      Bound    demo-pv-subpath                            10Mi       RWO                           91m
+```
+Potwierdzamy, że nasz index.html został dodany za pomocą subpath jest hostowany przez nginx
+```
+> kubectl port-forward web-pv-dynamic-subpath 8080:80
+
+> curl localhost:8080
+hello from subpath!!!
+```
 
 ---
 

@@ -1,0 +1,48 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: demo-sc
+provisioner: docker.io/hostpath
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: demo-pvc-sc
+spec:
+  storageClassName: "demo-sc"
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 0.5Mi
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pv-dynamic
+spec:
+  initContainers:
+    - image: ubuntu:latest
+      name: setup
+      volumeMounts:
+        - name: workdir
+          mountPath: /repo
+      command: ["/bin/sh", "-c"]
+      args:
+        - apt-get update;
+          apt-get install -y git;
+          git clone "https://github.com/KrzyskowK/poznajKubernetes.git" /repo;
+  containers:
+    - image: nginx:1.17.6
+      name: web
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: workdir
+          mountPath: /usr/share/nginx/html
+  volumes:
+    - name: workdir
+      persistentVolumeClaim:
+        claimName: demo-pvc-sc
