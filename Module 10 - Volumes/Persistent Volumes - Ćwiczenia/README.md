@@ -185,6 +185,84 @@ hello !!!
 
 ### Użyj PersistentVolume i PersistentVolumeClaim aby dostarczyć plik konfiguracyjny za pomocą subpath
 
+Na początek spróbujmy ponownie użyć istniejącego PV `demo-pv`, stwórzmy jedynie nowy PersistentVolumeClaim `demo-pv-subpath`.
+Widzimy jednak, że nowy PVC nie zamontuje się automatycznie do PV
+```
+> kubectl get pvc
+NAME               STATUS    VOLUME    CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+demo-pvc           Bound     demo-pv   10Mi       RWO                           104m
+demo-pvc-subpath   Pending                                                      53s
+```
+Jeżeli sprawdzimy eventy `demo-pvc-subpath` dowiemy się, że `no persistent volumes available for this claim`.
+Dzieje się tak ponieważ jeden statyczny PV może być w danej chwili wykorzystywany przez jedno PVC. Dodatkow `demo-pvc` zostało stworzone z `reclaimPolicy: retain`
+co oznacz że nawet po usunięciu obecnie z-boundowaneg claima `demo-pvc` nie będziemy mogli się do niego podłączyć dopóki nie zostanie on manualnie wyczyszczony
+```
+> kubectl describe pvc demo-pvc-subpath
+Name:          demo-pvc-subpath
+Namespace:     default
+Status:        Pending
+Volume:
+Labels:        <none>
+Annotations:   kubectl.kubernetes.io/last-applied-configuration:
+                 {"apiVersion":"v1","kind":"PersistentVolumeClaim","metadata":{"annotations":{},"name":"demo-pvc-subpath","namespace":"default"},"spec":{"a...
+Finalizers:    [kubernetes.io/pvc-protection]
+Capacity:
+Access Modes:
+VolumeMode:    Filesystem
+Events:
+  ----       ------         ----              ----                         -------
+  Normal     FailedBinding  3s (x8 over 83s)  persistentvolume-controller  no persistent volumes available for this claim and no storage class is set
+Mounted By:  web-pv-static-subpath
+```
+
+tworzymy zatem nowy PersistentVolume `demo-pv-subpath`, aktualizujemy PersistentVolumeClaim `demo-pv-subpath` tak aby korzystał z `demo-pv-subpath`.
+Następnie w InitContainer naszego pod stworzymy nowy plik `index.html` który następnie zamontujemy jako `subpath` do wlaściwego kontenera
+```
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pv-static-subpath
+spec:
+  initContainers:
+    - image: ubuntu:latest
+      name: setup
+      volumeMounts:
+        - name: workdir
+          mountPath: /tempdir
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "hello from subpath!!!" > /tempdir/index.html;
+  containers:
+    - image: nginx:1.17.6
+      name: web
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: workdir
+          mountPath: /usr/share/nginx/html/index.html
+          subPath: index.html
+  volumes:
+    - name: workdir
+      persistentVolumeClaim:
+        claimName: demo-pvc-subpath
+```
+Dodajemy konfigurację do klastra, widzimy że nasz PVC został podłączony do PV.
+```
+> kubectl apply -f .\pv-pvc-static-subpath.yaml
+persistentvolume/demo-pv-subpath created
+persistentvolumeclaim/demo-pvc-subpath configured
+pod/web-pv-static-subpath created
+
+> kubectl get pvc
+NAME               STATUS   VOLUME            CAPACITY   ACCESS MODES   STORAGECLASS   AGE
+demo-pvc-subpath   Bound    demo-pv-subpath   10Mi       RWO                           5m34s
+```
+Sprawdzamy czy nasz `index.html` został odpowiedni podmontowany jako subpath
+```
+> kubectl port-forward web-pv-static-subpath 8080:80
+> curl localhost:8080
+hello from subpath!!!
+```
 ---
 
 ### PersistenVolumeProvisioner aby zcacheować repozytorium git za pomocą InitContainer
