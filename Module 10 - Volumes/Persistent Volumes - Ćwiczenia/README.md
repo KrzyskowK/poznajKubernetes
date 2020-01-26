@@ -365,3 +365,6 @@ hello from subpath!!!
 ---
 
 ### Odpowiedz sobie na pytanie kiedy może Ci się przydać Twoja własna klasa StorageClass?
+
+- jeżeli miałby utrzymywać w klastrze jakąś bazę danych i chciałbym oddelegować problem zarządzania dostępnym miejscem na dysku
+- wolałbym używać własnej storageClass zamiast domyślnej aby mieć kontrolę nad jej konfiguracją (provisioner, reclaimPolicy, volumeBindingMode)
