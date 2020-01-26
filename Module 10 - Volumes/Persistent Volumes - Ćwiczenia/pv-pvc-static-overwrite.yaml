@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pv-static-3
+spec:
+  initContainers:
+    - image: ubuntu:latest
+      name: setup
+      volumeMounts:
+        - name: workdir
+          mountPath: /repo
+      command: ["/bin/sh", "-c"]
+      args:
+        - echo "hello !!!" > /repo/index.html;
+  containers:
+    - image: nginx:1.17.6
+      name: web
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: workdir
+          mountPath: /usr/share/nginx/html
+  volumes:
+    - name: workdir
+      persistentVolumeClaim:
+        claimName: demo-pvc

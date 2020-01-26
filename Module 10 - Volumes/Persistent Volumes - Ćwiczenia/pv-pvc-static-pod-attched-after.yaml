@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: web-pv-static-2
+spec:
+  containers:
+    - image: nginx:1.17.6
+      name: web-pv-static-2
+      ports:
+        - containerPort: 80
+      volumeMounts:
+        - name: workdir
+          mountPath: /usr/share/nginx/html
+  volumes:
+    - name: workdir
+      persistentVolumeClaim:
+        claimName: demo-pvc

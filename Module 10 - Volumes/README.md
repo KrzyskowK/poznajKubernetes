@@ -28,3 +28,115 @@ specificzne dla kubernetes (nie zależne od vendorów)
 - `hostPath` - trzymane na NODE
 - `configMap`
 - `secret`
+- `persistentVolumeClaim` - trzymane na fizycznym dysku poza klastrem
+
+
+## PersistentVolumes
+
+- zasób umożliwiający dostęp do fizycznych dysków
+- ⚠️ nie znajdują się w żadnym namespace!
+
+template:
+```
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pkad-pv
+  labels:
+    some: label
+spec:
+  storageClassName: ""
+  capacity:
+    storage: 10Mi
+  persistentVolumeReclaimPolicy: Retain
+  accessModes:
+  - ReadWriteOnce
+  hostPath:
+    path: /tmp/pkadhtml
+```
+
+```
+kubectl get pv
+```
+### PersistentVolumes - storageClassName
+
+### PersistentVolumes - capacity
+-
+
+### PersistentVolumes - persistentVolumeReclaimPolicy
+- co ma się stać z dyskiem gdy nie jest już potrzebny (gdy usuwamy Claim)
+- mamy dostępne `Retain`, `Recycle`, `Delete`
+
+`Recycle` - może zostać użyty przez inny PersistentVolumeClaim
+
+`Retain` - zatrzymujemy dysk, nikt inny nie może go użyć
+
+`Delete` - usuwamy dysk zaraz po odmonotwaniu
+
+### PersistentVolumes - accessModes
+- określa jak dysko może być używany przez nody
+- mamy dostępne: `ReadWriteOnce`, `ReadWriteMany`, `ReadOnlyMany`
+
+`ReadWriteOnce` - the volume can be mounted as read-write by a single node
+
+`ReadWriteMany` - the volume can be mounted as read-write by many nodes
+
+`ReadOnlyMany` - the volume can be mounted read-only by many nodes
+
+## PersistentVolumeClaim
+
+template:
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: test
+  name: pkad-pvc
+  labels:
+    app: test
+spec:
+  storageClassName: ""
+  selector:
+    matchLabels:
+      some: label
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Mi
+```
+
+```
+kubectl get pvc
+```
+
+### dodawanie claim do POD
+
+```
+...
+volumes:
+- name: pkad-data
+  persistentVolumeClaim:
+    claimName: pkad-pvc
+```
+
+## StorageClass in PersistenVolumeProvisioner
+
+- `storageClassName==""` - nie wykorzystujemy provisionera
+- `storageClassName=="pk-sc"` - spróbujemy wykorzystać provisioner opisany jako "pk-sc"
+- brak `storageClassName` - wybieramy domyślny storageClassName
+
+```
+kubectl get storageclass
+```
+
+template dla storageClass
+```
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: pk-sc
+provisioner: docker.io/hostpath
+reclaimPolicy: Retain
+allowVolumeExpansion: true
+```
