@@ -48,7 +48,7 @@ nastepnie udostępniamy nginx na zwenątrz klastra
 ```
 > kubectl port-forward web 8080:80
 ```
-widzimy, że repo zostało poprawnie wyciągnie https://github.com/KrzyskowK/poznajKubernetes/blob/master/index.html
+widzimy, że repo zostało poprawnie wyciągniete i nasz nginx serwuje teraz https://github.com/KrzyskowK/poznajKubernetes/blob/master/index.html
 ```
 > curl localhost:8080
 <h1>Ahoj! 🚢📦🏴‍☠️</h1>
