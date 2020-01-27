@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-pvc-local
+spec:
+  replicas: 5
+  selector:
+    matchLabels:
+      app: webapp
+  strategy: {}
+  template:
+    metadata:
+      name: web-pvc-local
+      labels:
+        app: webapp
+    spec:
+      containers:
+        - image: nginx:1.17.6
+          name: web
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: workdir
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: workdir
+          persistentVolumeClaim:
+            claimName: pvc-local
