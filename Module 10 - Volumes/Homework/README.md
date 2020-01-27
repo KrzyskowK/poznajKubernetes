@@ -1,14 +1,6 @@
 # Praca domowa
  
-Spróbuj podpiąć się wykorzystująć PersistentVolumeClaim pod inny dysk niż domyślny (zamiast innego dysku można użyć PV:local).
-Wykorzystaj typ wolumenu: projected by połączyć przynajmniej dwa typy wolumenów:
-- emptyDir
-- hostPath
-- downwardAPI
-- configMap
-- secret
-
----
+### 1. Spróbuj podpiąć się wykorzystująć PersistentVolumeClaim pod inny dysk niż domyślny (zamiast innego dysku można użyć PV:local).
 
 Trochę teorii:
 
@@ -17,13 +9,6 @@ https://kubernetes.io/docs/concepts/storage/volumes/#local
 Q: Jaką przewagę ma `PersistentVolume - local` nad `PersistenVolume - hostPath`?
 
 A: W przypadku `hostPath` nasz PersistenVolume jest przypięty do konretnego `node`, w związku z tym pod które korzystając z tego PV muszą zostać zaschedulowane na tym konkretnym nodzie. `local` dostarcza mechanizm który pozwala automatycznie zaschedulować odpowiednie pod na odpowiednim `node` za pomocą ustawień w `nodeAffinity`
-
-https://kubernetes.io/docs/tasks/configure-pod-container/configure-projected-volume-storage/
-https://kubernetes.io/docs/concepts/storage/volumes/#projected
-
-Q: Czym jest `projected` Volume?
-
-A: sposób na podmontowanie do pod kilku volumenów do tej samej ścieżki
 
 ---
 
@@ -170,4 +155,69 @@ Jeżeli teraz dodamy do naszej ścieżki index.html, powinniśmy widzeć, że zo
 
 > curl localhost:8080
 hello from node-worker2 local PV
+```
+
+---
+
+### 2. Wykorzystaj typ wolumenu: projected by połączyć przynajmniej dwa typy wolumenów
+
+Trochę teorii:
+
+https://kubernetes.io/docs/tasks/configure-pod-container/configure-projected-volume-storage/
+https://kubernetes.io/docs/concepts/storage/volumes/#projected
+
+Q: Czym jest `projected` Volume?
+
+A: sposób na podmontowanie do pod kilku volumenów do tej samej ścieżki
+
+---
+
+Spróbujmy teraz skorzystać w pod z volume typu `projected`, w tym celu stworzymy dwa configMaps. jeden z nich będzie zawierać `udhcpd.conf` a drugi `appsettings.json`. Następnie zamontujemy obie konfigurację jako projected pod ścieżką `/allconfigs` w naszym kontenerze.
+```
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config1
+data:
+  udhcpd.conf: "hello from udhcpd.conf :wave:" 
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: config2
+data:
+  appsettings.json: "hello from appsettings.json :wave:"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: busybox
+spec:
+  containers:
+  - name: busybox
+    command: ["sleep", "3000"]
+    volumeMounts:
+    - name: all-in-one
+      mountPath: /allconfigs
+    image: busybox
+  volumes:
+    - name: all-in-one
+      projected:
+        sources:
+        - configMap:
+            name: config1
+        - configMap:
+            name: config2
+```
+
+```
+> kubectl apply -f .\pod-projection-volume.yaml
+configmap/config1 unchanged
+configmap/config2 unchanged
+pod/busybox configured
+```
+Sprawdzamy czy `appsettings.json` i `udhcpd.conf` leżą w `/allconfigs` tak jak się spodziewaliśmy
+```
+> kubectl exec -it busybox ls /allconfigs
+appsettings.json  udhcpd.conf
 ```
