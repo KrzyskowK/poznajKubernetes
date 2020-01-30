@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: nginx
+spec:
+  replicas: 3
+  serviceName: nginx
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      initContainers:
+      - image: ubuntu:latest
+        name: setup
+        volumeMounts:
+          - name: workdir
+            mountPath: /repo
+        command: ["/bin/sh", "-c"]
+        args:
+          - apt-get update;
+            apt-get install -y git;
+            git clone "https://github.com/KrzyskowK/poznajKubernetes.git" /repo;
+      containers:
+        - image: nginx:1.17.6
+          name: nginx
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: workdir
+              mountPath: /usr/share/nginx/html
+      volumes:
+        - name: workdir
+          emptyDir: {}
