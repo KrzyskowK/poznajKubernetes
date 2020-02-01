@@ -312,3 +312,143 @@ nginx:1.17
 ```
 
 ### Działanie serwisu typu headless
+
+Dodajmy headless service do naszego statefulset tak żeby można było odnieść się do naszych pod za pomocą stałej nazwy sieciowej
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: nginx
+  clusterIP: None
+  selector:
+    app: nginx
+```
+
+Widzimy, że nasz serwis po stworzeniu dodaje IP naszych stateful podów do `Endpoints`.
+Widzimy również, że `ClusterIP` nie zostaje przypisane do `svc` - musimy zatem komunikować się bezpośrednio z wybraną instancją pod
+```
+> kubectl apply -f .\headless-svc.yaml
+service/svc created
+
+> kubectl get pod -o wide
+NAME      READY   STATUS    RESTARTS   AGE   IP          NODE             NOMINATED NODE   READINESS GATES
+nginx-0   1/1     Running   0          38h   10.1.2.14   docker-desktop   <none>           <none>
+nginx-1   1/1     Running   0          38h   10.1.2.13   docker-desktop   <none>           <none>
+nginx-2   1/1     Running   0          38h   10.1.2.12   docker-desktop   <none>           <none>
+
+> kubectl get endpoints
+NAME         ENDPOINTS                                AGE
+kubernetes   192.168.65.3:6443                        12d
+nginx-svc    10.1.2.12:80,10.1.2.13:80,10.1.2.14:80   84s
+
+> kubectl get svc
+NAME         TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+kubernetes   ClusterIP   10.96.0.1    <none>        443/TCP   12d
+nginx-svc    ClusterIP   None         <none>        80/TCP    15s
+```
+Sprawdźmy zatem pod jakimi nazwami w DNS dostępne sa nasze POD
+> ⚠️ Ciekawostka, próbowałem użyć nslookup z busybox ale nie potrafiz resolovować adressu https://github.com/docker-library/busybox/issues/61
+```
+> kubectl run -it --rm tools --generator=run-pod/v1 --image=giantswarm/tiny-tools
+If you don't see a command prompt, try pressing enter.
+
+# nslookup nginx-svc
+Server:         10.96.0.10
+Address:        10.96.0.10#53
+
+Name:   nginx-svc.default.svc.cluster.local
+Address: 10.1.2.13
+Name:   nginx-svc.default.svc.cluster.local
+Address: 10.1.2.14
+Name:   nginx-svc.default.svc.cluster.local
+Address: 10.1.2.12
+```
+Widzimy, że nginx-svc jest poprawnie resolvowany przez coreDNS, niestety kiedy chcemy odnieść się do konkretnego pod za pomocą konwencji `<pod-name>-<id>.<svc-name>`
+nie znajdujemy takiego wpisu.
+```
+ # nslookup nginx-0.nginx-svc.default.svc.cluster.local
+Server:         10.96.0.10
+Address:        10.96.0.10#53
+
+** server can't find nginx-0.nginx-svc.default.svc.cluster.local: NXDOMAIN
+```
+⚠️ Ten stan rzeczy spowodowany jest tym, że źle nazwaliśmy nasz serwis. Jeżeli cofniemy się do definicji statefulset zobaczymy że `Statefulset: spec.serviceName` ma przypisaną inną nazwę niż nasz serwis (`Service: metadata.name`)
+https://github.com/kubernetes/kubernetes/issues/45779. 
+
+Naprawiamy zatem definicję naszego serwisu zmieniając nam z `nginx-svc` na `nginx`
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx
+  labels:
+    app: nginx
+spec:
+  ports:
+  - port: 80
+    name: nginx
+  clusterIP: None
+  selector:
+    app: nginx
+```
+Widzimy, że tym razem konwencja `<pod-name>-<id>.<svc-name>` jest poprawnie dostępna w coreDNS
+```
+> kubectl apply -f .\headless-svc-fixed-name.yaml
+service/nginx created
+
+> kubectl run -it --rm tools --generator=run-pod/v1 --image=giantswarm/tiny-tools
+
+/ # nslookup nginx
+Server:         10.96.0.10
+Address:        10.96.0.10#53
+
+Name:   nginx.default.svc.cluster.local
+Address: 10.1.2.14
+Name:   nginx.default.svc.cluster.local
+Address: 10.1.2.13
+Name:   nginx.default.svc.cluster.local
+Address: 10.1.2.12
+
+/ # nslookup nginx-0.nginx
+Server:         10.96.0.10
+Address:        10.96.0.10#53
+
+Name:   nginx-0.nginx.default.svc.cluster.local
+Address: 10.1.2.14
+
+/ # nslookup nginx-1.nginx
+Server:         10.96.0.10
+Address:        10.96.0.10#53
+
+Name:   nginx-1.nginx.default.svc.cluster.local
+Address: 10.1.2.13
+
+/ # nslookup nginx-2.nginx
+Server:         10.96.0.10
+Address:        10.96.0.10#53
+
+Name:   nginx-2.nginx.default.svc.cluster.local
+Address: 10.1.2.12
+```
+Potwierdźmy jeszcze czy jestesmy w stanie uzyskać poprawne odpowiedzi z poszczególnych podów
+```
+> kubectl run -it --rm tools --generator=run-pod/v1 --image=giantswarm/tiny-tools
+
+/ # curl nginx-0.nginx
+<h1>Ahoj! 🚢📦🏴‍☠️</h1>
+
+/ # curl nginx-1.nginx
+<h1>Ahoj! 🚢📦🏴‍☠️</h1>
+
+/ # curl nginx-2.nginx
+<h1>Ahoj! 🚢📦🏴‍☠️</h1>
+```
+
+### Skalowanie StatefulSets
+
