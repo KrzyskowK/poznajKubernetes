@@ -31,8 +31,8 @@ spec:
         args:
           - apt-get update;
             apt-get install -y git;
-            if cd repo; 
-            then git pull;
+            if [ -d /repo/.git ]; 
+            then cd /repo; git pull;
             else git clone "https://github.com/KrzyskowK/poznajKubernetes.git" /repo;
             fi
       containers:

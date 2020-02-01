@@ -284,11 +284,11 @@ W logach widać, że `initContainer` nie potrafi pobrać repozytorium do folderu
 ```
   args:
     - apt-get update;
-    apt-get install -y git;
-    if cd repo; 
-    then git pull;
-    else git clone "https://github.com/KrzyskowK/poznajKubernetes.git" /repo;
-    fi
+      apt-get install -y git;
+      if [ -d /repo/.git ]; 
+      then cd /repo; git pull;
+      else git clone "https://github.com/KrzyskowK/poznajKubernetes.git" /repo;
+      fi
 ```
 
 Widzimy, że tym razem wszystkie pod zostału poprawnie zaktualizowane w kolejności od największego indeksu do najmniejszego
