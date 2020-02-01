@@ -313,7 +313,7 @@ nginx:1.17
 
 ### Działanie serwisu typu headless
 
-Dodajmy headless service do naszego statefulset tak żeby można było odnieść się do naszych pod za pomocą stałej nazwy sieciowej
+Dodajmy headless service do naszego statefulset tak żeby można było odnieść się do naszych pod za pomocą stałej nazwy sieciowej wewnątrz klastra
 ```
 apiVersion: v1
 kind: Service
@@ -448,6 +448,38 @@ Potwierdźmy jeszcze czy jestesmy w stanie uzyskać poprawne odpowiedzi z poszcz
 
 / # curl nginx-2.nginx
 <h1>Ahoj! 🚢📦🏴‍☠️</h1>
+```
+
+Co jeżeli chcielibyśmy aby nasz statefull app był widoczny z poza klastra?
+Możemy w tym celu użyć pozostałych typów serwisów i labelki `statefulset.kubernetes.io/pod-name` która ustawiana jest przez statefulset
+
+```
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-0
+spec:
+  type: LoadBalancer
+  selector:
+    statefulset.kubernetes.io/pod-name: nginx-0
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+```
+
+```
+> kubectl apply -f .\external-svc.yaml    
+service/nginx-0 created
+
+> kubectl get svc
+NAME         TYPE           CLUSTER-IP      EXTERNAL-IP   PORT(S)        AGE
+kubernetes   ClusterIP      10.96.0.1       <none>        443/TCP        12d
+nginx        ClusterIP      None            <none>        80/TCP         62m
+nginx-0      LoadBalancer   10.104.189.91   localhost     80:31151/TCP   118s
+
+> curl localhost
+<h1>Ahoj! 🚢📦🏴‍☠️</h1
 ```
 
 ### Skalowanie StatefulSets
