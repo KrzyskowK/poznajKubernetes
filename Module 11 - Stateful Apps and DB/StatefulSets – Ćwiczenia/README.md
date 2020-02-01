@@ -452,3 +452,74 @@ Potwierdźmy jeszcze czy jestesmy w stanie uzyskać poprawne odpowiedzi z poszcz
 
 ### Skalowanie StatefulSets
 
+Zeskalujmy ilość instancji statefulset do 5. Widzimy, że kolejno dodawane są instancje `nginx-3` i `nginx-4`
+```
+> kubectl scale statefulset nginx --replicas=5
+statefulset.apps/nginx scaled
+
+> kubectl get pod -w
+NAME      READY   STATUS    RESTARTS   AGE
+nginx-0   1/1     Running   0          2m48s
+nginx-1   1/1     Running   0          3m31s
+nginx-2   1/1     Running   0          4m21s
+nginx-3   0/1     Pending   0          0s
+nginx-3   0/1     Pending   0          0s
+nginx-3   0/1     Init:0/1   0          0s
+nginx-3   0/1     Init:0/1   0          4s
+nginx-3   0/1     PodInitializing   0          42s
+nginx-3   1/1     Running           0          43s
+nginx-4   0/1     Pending           0          0s
+nginx-4   0/1     Pending           0          0s
+nginx-4   0/1     Pending           0          17s
+nginx-4   0/1     Init:0/1          0          17s
+nginx-4   0/1     Init:0/1          0          21s
+nginx-4   0/1     PodInitializing   0          57s
+nginx-4   1/1     Running           0          58s
+
+> kubectl get statefulset -w
+NAME    READY   AGE
+nginx   3/3     40h
+nginx   3/5     40h
+nginx   3/5     40h
+nginx   4/5     40h
+nginx   5/5     40h
+```
+
+spróbujmy teraz zeskalować liczbę serwisów w dół do 2. Widzimy, że kolejno wyłączane są instancje `nginx-4`, `nginx-3`, `nginx-2`
+
+```
+> kubectl scale statefulset nginx --replicas=2
+statefulset.apps/nginx scaled
+
+> kubectl get pod -w
+NAME      READY   STATUS    RESTARTS   AGE
+nginx-0   1/1     Running   0          7m39s
+nginx-1   1/1     Running   0          8m22s
+nginx-2   1/1     Running   0          9m12s
+nginx-3   1/1     Running   0          4m45s
+nginx-4   1/1     Running   0          4m2s
+nginx-4   1/1     Terminating   0          4m7s
+nginx-4   0/1     Terminating   0          4m8s
+nginx-4   0/1     Terminating   0          4m20s
+nginx-4   0/1     Terminating   0          4m20s
+nginx-3   1/1     Terminating   0          5m3s
+nginx-3   0/1     Terminating   0          5m5s
+nginx-3   0/1     Terminating   0          5m6s
+nginx-3   0/1     Terminating   0          5m6s
+nginx-2   1/1     Terminating   0          9m33s
+nginx-2   0/1     Terminating   0          9m34s
+nginx-2   0/1     Terminating   0          9m35s
+nginx-2   0/1     Terminating   0          9m35s
+
+> kubectl get statefulset -w
+NAME    READY   AGE
+nginx   5/5     40h
+nginx   5/2     40h
+nginx   5/2     40h
+nginx   4/2     40h
+nginx   4/2     40h
+nginx   3/2     40h
+nginx   3/2     40h
+nginx   2/2     40h
+nginx   2/2     40h
+```
