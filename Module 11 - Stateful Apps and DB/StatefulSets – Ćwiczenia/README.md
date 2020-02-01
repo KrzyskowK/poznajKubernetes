@@ -484,7 +484,7 @@ nginx-0      LoadBalancer   10.104.189.91   localhost     80:31151/TCP   118s
 
 ### Skalowanie StatefulSets
 
-Zeskalujmy ilość instancji statefulset do 5. Widzimy, że kolejno dodawane są instancje `nginx-3` i `nginx-4`
+Zeskalujmy ilość instancji statefulset do 5. Widzimy, że kolejno dodawane są instancje `nginx-3` i `nginx-4` - zgodnie z domyślnym ustawieniem `podManagementPolicy: "OrderedReady"`
 ```
 > kubectl scale statefulset nginx --replicas=5
 statefulset.apps/nginx scaled
@@ -517,7 +517,7 @@ nginx   4/5     40h
 nginx   5/5     40h
 ```
 
-spróbujmy teraz zeskalować liczbę serwisów w dół do 2. Widzimy, że kolejno wyłączane są instancje `nginx-4`, `nginx-3`, `nginx-2`
+spróbujmy teraz zeskalować liczbę serwisów w dół do 2. Widzimy, że kolejno wyłączane są instancje `nginx-4`, `nginx-3`, `nginx-2` - zgodnie z domyślnym ustawieniem `podManagementPolicy: "OrderedReady"`
 
 ```
 > kubectl scale statefulset nginx --replicas=2
