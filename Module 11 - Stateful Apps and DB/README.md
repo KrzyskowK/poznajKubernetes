@@ -1,4 +1,4 @@
-#Stateful Apps
+# Stateful Apps
 
 https://kubernetes.io/docs/tutorials/stateful-application/basic-stateful-set/#cascading-delete
 
