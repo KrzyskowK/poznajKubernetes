@@ -113,3 +113,32 @@ spec:
         storage: 10Mi
 ...
 ```
+
+## Bazy danych w kubernetes
+
+https://cloud.google.com/blog/products/databases/to-run-or-not-to-run-a-database-on-kubernetes-what-to-consider
+
+do deploymentu baz danych używamy zawsze `statefulset` nigdy `deployment`. Wyjątkiem są bazy służące do cachowani jak: Redis/Memcache
+
+baza danych musi zawsze byc w wiecej niz jedenj instancji zeby zapewnic wysoka dostepnosc
+
+do rzpechowywania plików stosujemy wolumeny, zeby dalo sie odyzyskac dane w przypadku faila
+
+baza kuberenes friendly:
+- posiada autofailover
+- przezywa restarty
+- autoreplikacja
+- sharding
+Przykładowe bazy:
+- elasticsearch
+- cassandra
+- mongoDB
+  
+
+### Przykład stawiania mongodb:
+
+najłatwiej poprzez `helm`
+```
+helm install pk-demo stable/mongodb -f https://raw.githubusercontent.com/helm/charts/master/stable/
+ mongodb/values-production.yaml
+```
